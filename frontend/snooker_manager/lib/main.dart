@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:snooker_manager/core/theme/theme.dart';
 import 'package:snooker_manager/features/auth/pages/get_started.dart';
+import 'package:snooker_manager/features/dashboard/pages/dashboard_page.dart';
+import 'package:snooker_manager/features/dashboard/pages/table_screen.dart';
+import 'package:snooker_manager/features/dashboard/pages/widgets/table_gridview.dart';
 // import 'package:snooker_manager/features/auth/pages/signin.dart';
 
 void main() {
@@ -18,7 +21,7 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkThemeMode,
       theme: AppTheme.lightThemeMode,
       themeMode: ThemeMode.system,
-      home: StartPage(),
+      home: TablesScreen(),
     );
   }
 }

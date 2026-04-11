@@ -1,129 +1,80 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 
-class BilliardTableWidget extends StatefulWidget {
-  final Map table;
-  final VoidCallback onStart;
-  final VoidCallback onEnd;
-
-  const BilliardTableWidget({
-    super.key,
-    required this.table,
-    required this.onStart,
-    required this.onEnd,
-  });
-
-  @override
-  State<BilliardTableWidget> createState() => _BilliardTableWidgetState();
-}
-
-class _BilliardTableWidgetState extends State<BilliardTableWidget> {
-  Duration elapsed = Duration.zero;
-  Timer? timer;
-
-  final double ratePerHour = 100; // later from settings
-
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.table['status'] == 'occupied') {
-      startTimer();
-    }
-  }
-
-  void startTimer() {
-    timer?.cancel();
-
-    timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {
-        elapsed += const Duration(seconds: 1);
-      });
-    });
-  }
-
-  void stopTimer() {
-    timer?.cancel();
-  }
-
-  double get liveAmount {
-    return (elapsed.inSeconds / 3600) * ratePerHour;
-  }
-
-  String formatTime(Duration d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return "${two(d.inHours)}:${two(d.inMinutes % 60)}:${two(d.inSeconds % 60)}";
-  }
-
-  @override
-  void dispose() {
-    timer?.cancel();
-    super.dispose();
-  }
+class PoolTableWidget extends StatelessWidget {
+  final Widget? child;
+  const PoolTableWidget({super.key, this.child});
 
   @override
   Widget build(BuildContext context) {
-    final isOccupied = widget.table['status'] == 'occupied';
+    double screenWidth = MediaQuery.of(context).size.width;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isOccupied ? Colors.red : Colors.green,
-          width: 2,
-        ),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    double itemWidth = (screenWidth / 2) - 20;
+    return SizedBox(
+      width: itemWidth,
+      height: itemWidth * 100,
+      child: Stack(
         children: [
-          /// Table Name
-          Text(
-            "Table ${widget.table['table_number']}",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          if (isOccupied) ...[
-            /// Customer Name (TEMP)
-            Text(
-              "Player: ${widget.table['customer_name'] ?? "Unknown"}",
-              style: const TextStyle(color: Colors.white70),
-            ),
-
-            /// Timer
-            Text(
-              formatTime(elapsed),
-              style: const TextStyle(color: Colors.white, fontSize: 22),
-            ),
-
-            /// Live Amount
-            Text(
-              "₹ ${liveAmount.toStringAsFixed(2)}",
-              style: const TextStyle(color: Colors.greenAccent, fontSize: 18),
-            ),
-
-            /// Pause Button
-            IconButton(
-              icon: const Icon(Icons.pause, color: Colors.red, size: 30),
-              onPressed: () {
-                stopTimer();
-                widget.onEnd();
-              },
-            ),
-          ] else ...[
-            /// Play Button
-            IconButton(
-              icon: const Icon(Icons.play_arrow, color: Colors.green, size: 40),
-              onPressed: widget.onStart,
-            ),
-          ],
+          Positioned.fill(child: CustomPaint(painter: PoolTablePainter())),
+          if (child != null) Center(child: child!),
         ],
       ),
     );
   }
+}
+
+class PoolTablePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, size) {
+    final cushionWidth = size.width * 0.03;
+    final pocketRadius = size.width * 0.02;
+
+    final framePaint = Paint()..color = const Color(0xFF4E342E);
+
+    final frameRect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.width * 0.010),
+    );
+
+    canvas.drawRRect(frameRect, framePaint);
+
+    final tableRect = Rect.fromLTWH(
+      cushionWidth,
+      cushionWidth,
+      size.width - cushionWidth * 2,
+      size.height - cushionWidth * 2,
+    );
+
+    final tablePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF2E7D32),
+          const Color.fromARGB(255, 11, 157, 18),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(tableRect);
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(tableRect, Radius.circular(size.width * 0.010)),
+      tablePaint,
+    );
+
+    final pocketPaint = Paint()..color = Colors.black;
+
+    final pockets = [
+      Offset(cushionWidth, cushionWidth),
+      Offset(size.width / 2, cushionWidth),
+      Offset(size.width - cushionWidth, cushionWidth),
+      Offset(cushionWidth, size.height - cushionWidth),
+      Offset(size.width / 2, size.height - cushionWidth),
+      Offset(size.width - cushionWidth, size.height - cushionWidth),
+    ];
+
+    for (final p in pockets) {
+      canvas.drawCircle(p, pocketRadius, pocketPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
